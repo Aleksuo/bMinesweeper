@@ -1,3 +1,5 @@
+use bevy::prelude::*;
+use bminesweeper::AppPlugin;
 fn main() {
-    println!("Hello, world!");
+    App::new().add_plugins(AppPlugin).run();
 }
