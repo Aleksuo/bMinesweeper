@@ -5,5 +5,13 @@ pub(super) fn plugin(app: &mut App) {
 }
 
 fn setup_camera(mut commands: Commands) {
-    commands.spawn(Camera2d);
+    commands.spawn((
+        Camera2d::default(),
+        Projection::from(OrthographicProjection {
+            scaling_mode: bevy::render::camera::ScalingMode::FixedVertical {
+                viewport_height: 100.,
+            },
+            ..OrthographicProjection::default_2d()
+        }),
+    ));
 }
