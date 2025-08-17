@@ -1,7 +1,9 @@
 use bevy::{
-    color::palettes::css::{BLUE, GRAY, WHITE_SMOKE},
+    color::palettes::css::{BLUE, GRAY, RED, WHITE_SMOKE},
     prelude::*,
 };
+
+use rand::Rng;
 
 use crate::game_state::{GameState, OnGameState};
 
@@ -14,6 +16,8 @@ enum TileState {
 
 #[derive(Resource)]
 struct TileGrid {
+    max_mines: u32,
+    remaining_mines: u32,
     height: u32,
     width: u32,
     tile_size: f32,
@@ -32,13 +36,18 @@ const TILE_SIZE: f32 = 8.;
 
 pub(super) fn plugin(app: &mut App) {
     app.insert_resource(TileGrid {
+        max_mines: 9,
+        remaining_mines: 9,
         height: 8,
         width: 8,
         tile_gap: 1.,
         tile_size: 8.,
         tiles: vec![vec![]],
     })
-    .add_systems(OnEnter(GameState::InGame), spawn_grid);
+    .add_systems(
+        OnEnter(GameState::InGame),
+        (spawn_grid, spawn_mines_on_grid).chain(),
+    );
 }
 
 fn spawn_grid(mut commands: Commands, mut grid_res: ResMut<TileGrid>) {
@@ -75,6 +84,35 @@ fn spawn_grid(mut commands: Commands, mut grid_res: ResMut<TileGrid>) {
     }
 }
 
+fn spawn_mines_on_grid(grid_res: ResMut<TileGrid>, mut tile_query: Query<&mut Tile>) {
+    let mut spawnable_tiles = {
+        let mut coords: Vec<(u32, u32)> = Vec::new();
+        for i in 0..grid_res.height {
+            for j in 0..grid_res.width {
+                coords.push((i, j));
+            }
+        }
+        coords
+    };
+
+    let mut remaining_placements = grid_res.max_mines;
+    let mut rng = rand::rng();
+    while remaining_placements > 0 {
+        let next_selection = rng.random_range(0..(spawnable_tiles.len() - 1));
+        let selection = spawnable_tiles.get(next_selection).unwrap().clone();
+        spawnable_tiles.remove(next_selection);
+        let entity_handle = grid_res.tiles[selection.0 as usize][selection.1 as usize];
+
+        let Ok(mut tile) = tile_query.get_mut(entity_handle) else {
+            error!("Tried to spawn a mine on a tile that does not exist!");
+            return;
+        };
+        tile.is_mined = true;
+
+        remaining_placements -= 1;
+    }
+}
+
 fn tile_on_pointer_click(
     click: Trigger<Pointer<Click>>,
     mut query: Query<(&mut Tile, &mut Sprite)>,
@@ -104,7 +142,11 @@ fn can_open_tile(tile: &Tile) -> bool {
 
 fn open_tile(tile: &mut Tile, sprite: &mut Sprite) {
     tile.state = TileState::Opened;
-    sprite.color = Color::from(WHITE_SMOKE);
+    if (tile.is_mined) {
+        sprite.color = Color::from(RED);
+    } else {
+        sprite.color = Color::from(WHITE_SMOKE);
+    }
 }
 
 fn can_flag_tile(tile: &Tile) -> bool {
