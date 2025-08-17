@@ -1,4 +1,7 @@
-use bevy::{color::palettes::css::GRAY, prelude::*};
+use bevy::{
+    color::palettes::css::{BLUE, GRAY, WHITE_SMOKE},
+    prelude::*,
+};
 
 use crate::game_state::{GameState, OnGameState};
 
@@ -42,7 +45,7 @@ fn spawn_grid(mut commands: Commands, mut grid_res: ResMut<TileGrid>) {
     let mut x_coord = start_x;
     let mut y_coord = start_y;
     for i in 0..grid_res.height {
-        for j in 0..grid_res.width {
+        for _ in 0..grid_res.width {
             let entity_handle = commands
                 .spawn((
                     OnGameState(GameState::InGame),
@@ -54,7 +57,9 @@ fn spawn_grid(mut commands: Commands, mut grid_res: ResMut<TileGrid>) {
                         is_mined: false,
                         is_opened: false,
                     },
+                    Pickable::default(),
                 ))
+                .observe(tile_on_pointer_click)
                 .id();
             grid_res.tiles[i as usize].push(entity_handle);
             x_coord += grid_res.tile_size + grid_res.tile_gap;
@@ -62,5 +67,50 @@ fn spawn_grid(mut commands: Commands, mut grid_res: ResMut<TileGrid>) {
         x_coord = start_x;
         y_coord += grid_res.tile_size + grid_res.tile_gap;
         grid_res.tiles.push(Vec::new());
+    }
+}
+
+fn tile_on_pointer_click(
+    click: Trigger<Pointer<Click>>,
+    mut query: Query<(&mut Tile, &mut Sprite)>,
+) {
+    let Ok((mut tile, mut sprite)) = query.get_mut(click.target) else {
+        return;
+    };
+
+    match click.button {
+        PointerButton::Primary => {
+            if can_open_tile(&tile) {
+                open_tile(&mut tile, &mut sprite);
+            }
+        }
+        PointerButton::Secondary => {
+            if can_flag_tile(&tile) {
+                flag_tile(&mut tile, &mut sprite);
+            }
+        }
+        _ => {}
+    }
+}
+
+fn can_open_tile(tile: &Tile) -> bool {
+    return !tile.is_opened;
+}
+
+fn open_tile(tile: &mut Tile, sprite: &mut Sprite) {
+    tile.is_opened = true;
+    sprite.color = Color::from(WHITE_SMOKE);
+}
+
+fn can_flag_tile(tile: &Tile) -> bool {
+    return !tile.is_opened;
+}
+
+fn flag_tile(tile: &mut Tile, sprite: &mut Sprite) {
+    tile.is_flagged = !tile.is_flagged;
+    if tile.is_flagged {
+        sprite.color = Color::from(BLUE)
+    } else {
+        sprite.color = Color::from(GRAY)
     }
 }
