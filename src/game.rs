@@ -5,6 +5,13 @@ use bevy::{
 
 use crate::game_state::{GameState, OnGameState};
 
+#[derive(PartialEq)]
+enum TileState {
+    Unopened,
+    Opened,
+    Flagged,
+}
+
 #[derive(Resource)]
 struct TileGrid {
     height: u32,
@@ -16,8 +23,7 @@ struct TileGrid {
 
 #[derive(Component)]
 struct Tile {
-    is_opened: bool,
-    is_flagged: bool,
+    state: TileState,
     addjacent_mines: u8,
     is_mined: bool,
 }
@@ -52,10 +58,9 @@ fn spawn_grid(mut commands: Commands, mut grid_res: ResMut<TileGrid>) {
                     Transform::from_xyz(x_coord, y_coord, 0.),
                     Sprite::from_color(Color::from(GRAY), Vec2::new(TILE_SIZE, TILE_SIZE)),
                     Tile {
-                        is_flagged: false,
+                        state: TileState::Unopened,
                         addjacent_mines: 0,
                         is_mined: false,
-                        is_opened: false,
                     },
                     Pickable::default(),
                 ))
@@ -94,23 +99,24 @@ fn tile_on_pointer_click(
 }
 
 fn can_open_tile(tile: &Tile) -> bool {
-    return !tile.is_opened;
+    return tile.state != TileState::Opened;
 }
 
 fn open_tile(tile: &mut Tile, sprite: &mut Sprite) {
-    tile.is_opened = true;
+    tile.state = TileState::Opened;
     sprite.color = Color::from(WHITE_SMOKE);
 }
 
 fn can_flag_tile(tile: &Tile) -> bool {
-    return !tile.is_opened;
+    return tile.state != TileState::Opened;
 }
 
 fn flag_tile(tile: &mut Tile, sprite: &mut Sprite) {
-    tile.is_flagged = !tile.is_flagged;
-    if tile.is_flagged {
+    if tile.state == TileState::Unopened {
+        tile.state = TileState::Flagged;
         sprite.color = Color::from(BLUE)
-    } else {
+    } else if tile.state == TileState::Flagged {
+        tile.state = TileState::Unopened;
         sprite.color = Color::from(GRAY)
     }
 }
