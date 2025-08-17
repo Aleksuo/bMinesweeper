@@ -207,11 +207,25 @@ fn open_tile(tile: &mut Tile, sprite: &mut Sprite, entity: Entity, mut commands:
                         font_smoothing: FontSmoothing::None,
                         ..default()
                     },
-                    TextColor::BLACK,
+                    TextColor::from(get_adjacent_text_color(tile.adjacent_mines)),
                 ));
             });
         }
     }
+}
+
+fn get_adjacent_text_color(count: u32) -> Srgba {
+    let text_color = match count {
+        1 => Srgba::hex("#0000FF"),
+        2 => Srgba::hex("#008000"),
+        3 => Srgba::hex("#FF0000"),
+        4 => Srgba::hex("#000080"),
+        5 => Srgba::hex("#800000"),
+        6 => Srgba::hex("#008080"),
+        7 => Srgba::hex("#000000"),
+        _ => Srgba::hex("#808080"),
+    };
+    text_color.unwrap()
 }
 
 fn can_flag_tile(tile: &Tile) -> bool {
