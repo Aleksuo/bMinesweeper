@@ -1,6 +1,7 @@
 use bevy::{
     color::palettes::css::{BLUE, GRAY, RED, WHITE_SMOKE},
     prelude::*,
+    text::FontSmoothing,
 };
 
 use rand::Rng;
@@ -18,17 +19,43 @@ enum TileState {
 struct TileGrid {
     max_mines: u32,
     remaining_mines: u32,
-    height: u32,
-    width: u32,
+    height: i32,
+    width: i32,
     tile_size: f32,
     tile_gap: f32,
     tiles: Vec<Vec<Entity>>,
 }
 
+impl TileGrid {
+    fn find_surrounding_tile_handles(&self, x: i32, y: i32) -> Vec<Entity> {
+        let mut surrounding_tiles = vec![];
+        for i in -1..=1 {
+            for j in -1..=1 {
+                if j == 0 && i == 0 {
+                    continue;
+                }
+                let tile_x = x + j;
+                let tile_y = y + i;
+                if let Some(handle) = self.get_tile_handle(tile_x, tile_y) {
+                    surrounding_tiles.push(handle);
+                }
+            }
+        }
+        surrounding_tiles
+    }
+
+    fn get_tile_handle(&self, x: i32, y: i32) -> Option<Entity> {
+        if (x < 0 || x >= self.width) || (y < 0 || y >= self.height) {
+            return None;
+        }
+        Some(self.tiles[y as usize][x as usize])
+    }
+}
+
 #[derive(Component)]
 struct Tile {
     state: TileState,
-    addjacent_mines: u8,
+    adjacent_mines: u32,
     is_mined: bool,
 }
 
@@ -46,7 +73,7 @@ pub(super) fn plugin(app: &mut App) {
     })
     .add_systems(
         OnEnter(GameState::InGame),
-        (spawn_grid, spawn_mines_on_grid).chain(),
+        (spawn_grid, spawn_mines_on_grid, calculate_adjacent_mines).chain(),
     );
 }
 
@@ -68,7 +95,7 @@ fn spawn_grid(mut commands: Commands, mut grid_res: ResMut<TileGrid>) {
                     Sprite::from_color(Color::from(GRAY), Vec2::new(TILE_SIZE, TILE_SIZE)),
                     Tile {
                         state: TileState::Unopened,
-                        addjacent_mines: 0,
+                        adjacent_mines: 0,
                         is_mined: false,
                     },
                     Pickable::default(),
@@ -86,7 +113,7 @@ fn spawn_grid(mut commands: Commands, mut grid_res: ResMut<TileGrid>) {
 
 fn spawn_mines_on_grid(grid_res: ResMut<TileGrid>, mut tile_query: Query<&mut Tile>) {
     let mut spawnable_tiles = {
-        let mut coords: Vec<(u32, u32)> = Vec::new();
+        let mut coords: Vec<(i32, i32)> = Vec::new();
         for i in 0..grid_res.height {
             for j in 0..grid_res.width {
                 coords.push((i, j));
@@ -113,9 +140,32 @@ fn spawn_mines_on_grid(grid_res: ResMut<TileGrid>, mut tile_query: Query<&mut Ti
     }
 }
 
+fn calculate_adjacent_mines(grid_res: ResMut<TileGrid>, mut tile_query: Query<&mut Tile>) {
+    for i in 0..grid_res.height {
+        for j in 0..grid_res.width {
+            let adjacent_mine_count: u32 = grid_res
+                .find_surrounding_tile_handles(j, i)
+                .iter()
+                .map(|handle| -> u32 {
+                    if let Ok(tile) = tile_query.get(*handle) {
+                        return tile.is_mined as u32;
+                    } else {
+                        return 0;
+                    }
+                })
+                .sum();
+            if let Ok(mut tile) = tile_query.get_mut(grid_res.get_tile_handle(j, i).unwrap()) {
+                tile.adjacent_mines = adjacent_mine_count;
+                info!(j, i, adjacent_mine_count);
+            }
+        }
+    }
+}
+
 fn tile_on_pointer_click(
     click: Trigger<Pointer<Click>>,
     mut query: Query<(&mut Tile, &mut Sprite)>,
+    commands: Commands,
 ) {
     let Ok((mut tile, mut sprite)) = query.get_mut(click.target) else {
         return;
@@ -124,7 +174,7 @@ fn tile_on_pointer_click(
     match click.button {
         PointerButton::Primary => {
             if can_open_tile(&tile) {
-                open_tile(&mut tile, &mut sprite);
+                open_tile(&mut tile, &mut sprite, click.target, commands);
             }
         }
         PointerButton::Secondary => {
@@ -140,12 +190,27 @@ fn can_open_tile(tile: &Tile) -> bool {
     return tile.state != TileState::Opened;
 }
 
-fn open_tile(tile: &mut Tile, sprite: &mut Sprite) {
+fn open_tile(tile: &mut Tile, sprite: &mut Sprite, entity: Entity, mut commands: Commands) {
     tile.state = TileState::Opened;
     if (tile.is_mined) {
         sprite.color = Color::from(RED);
     } else {
         sprite.color = Color::from(WHITE_SMOKE);
+        if tile.adjacent_mines > 0 {
+            // maybe render the text here?
+            commands.entity(entity).with_children(|p| {
+                p.spawn((
+                    Text2d::new(format!("{:?}", tile.adjacent_mines)),
+                    Transform::from_xyz(0., 0., 1.),
+                    TextFont {
+                        font_size: TILE_SIZE * 1.1,
+                        font_smoothing: FontSmoothing::None,
+                        ..default()
+                    },
+                    TextColor::BLACK,
+                ));
+            });
+        }
     }
 }
 
