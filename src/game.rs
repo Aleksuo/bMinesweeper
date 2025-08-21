@@ -156,7 +156,6 @@ fn calculate_adjacent_mines(grid_res: ResMut<TileGrid>, mut tile_query: Query<&m
                 .sum();
             if let Ok(mut tile) = tile_query.get_mut(grid_res.get_tile_handle(j, i).unwrap()) {
                 tile.adjacent_mines = adjacent_mine_count;
-                info!(j, i, adjacent_mine_count);
             }
         }
     }
