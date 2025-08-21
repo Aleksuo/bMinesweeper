@@ -8,7 +8,13 @@ mod game_state;
 impl Plugin for AppPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins((
-            DefaultPlugins,
+            DefaultPlugins.set(WindowPlugin {
+                primary_window: Some(Window {
+                    canvas: Some("#bevy-canvas".to_string()),
+                    ..default()
+                }),
+                ..default()
+            }),
             game_state::plugin,
             camera::plugin,
             game::plugin,
