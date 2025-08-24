@@ -1,5 +1,0 @@
-{
-    "id": "rust-wasm-feature",
-    "version": "0.0.1",
-    "installsAfter": ["ghcr.io/devcontainers/features/rust"]
-}

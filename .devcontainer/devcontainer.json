@@ -1,11 +1,20 @@
 {
-    "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
-    "features": {
-    "ghcr.io/devcontainers/features/rust:1": {
-        "version": "1.89.0"
-    },
-    "./rust-wasm-feature": {}
-    },
-    "remoteUser": "root",
-    "forwardPorts": [8080]
+  //"build": { "dockerfile": "Dockerfile"},
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu-22.04",
+  "features": {
+    "ghcr.io/devcontainers/features/rust:1": { "version": "1.89.0", "profile": "complete" }
+  },
+  "remoteUser": "root",
+  "containerEnv": {
+    "CARGO_HOME": "/cache/cargo",
+    "RUSTUP_HOME": "/cache/rustup",
+    "CARGO_TARGET_DIR": "/cache/target"
+  },
+  "mounts": [
+    "source=bevy-cargo-cache,target=/cache/cargo,type=volume",
+    "source=bevy-rustup-cache,target=/cache/rustup,type=volume",
+    "source=bevy-target-cache,target=/cache/target,type=volume"
+  ],
+  "postCreateCommand": "apt-get update && apt-get install -y --no-install-recommends binaryen wabt pkg-config libssl-dev && rustup target add wasm32-unknown-unknown && cargo install trunk --locked",
+  "forwardPorts": [18080]
 }
