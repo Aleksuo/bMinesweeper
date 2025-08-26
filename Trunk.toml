@@ -1,8 +1,5 @@
 [build]
 release = false
 
-[watch]
-ignore = [".git", "target", "dist"]
-
 [serve]
 port = 18080
