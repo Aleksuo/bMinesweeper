@@ -1,5 +1,6 @@
 [build]
 release = false
+public_url = "/bMinesweeper/"
 
 [serve]
 port = 18080
