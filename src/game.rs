@@ -1,5 +1,6 @@
 use bevy::{
     color::palettes::css::{BLUE, GRAY, RED, WHITE_SMOKE},
+    platform::collections::{HashMap, HashSet},
     prelude::*,
     text::FontSmoothing,
 };
@@ -49,6 +50,18 @@ impl TileGrid {
             return None;
         }
         Some(self.tiles[y as usize][x as usize])
+    }
+
+    fn find_tile_coords(&self, entity: Entity) -> Option<(i32, i32)> {
+        for i in 0..self.height {
+            for j in 0..self.width {
+                let entity_at_coord = self.get_tile_handle(j, i).unwrap();
+                if entity == entity_at_coord {
+                    return Some((j, i));
+                }
+            }
+        }
+        None
     }
 }
 
@@ -163,22 +176,60 @@ fn calculate_adjacent_mines(grid_res: ResMut<TileGrid>, mut tile_query: Query<&m
 
 fn tile_on_pointer_click(
     click: Trigger<Pointer<Click>>,
+    grid_res: ResMut<TileGrid>,
     mut query: Query<(&mut Tile, &mut Sprite)>,
-    commands: Commands,
+    mut commands: Commands,
 ) {
-    let Ok((mut tile, mut sprite)) = query.get_mut(click.target) else {
-        return;
-    };
-
     match click.button {
         PointerButton::Primary => {
-            if can_open_tile(&tile) {
-                open_tile(&mut tile, &mut sprite, click.target, commands);
+            let (can_open, is_mined) = if let Ok((clicked_tile, _)) = query.get(click.target) {
+                (can_open_tile(&clicked_tile), clicked_tile.is_mined)
+            } else {
+                (false, false)
+            };
+            if !can_open {
+                return;
+            }
+            if is_mined {
+                for i in 0..grid_res.height {
+                    for j in 0..grid_res.width {
+                        if let Some(entity) = grid_res.get_tile_handle(j, i) {
+                            if let Ok((mut tile, mut sprite)) = query.get_mut(entity) {
+                                open_tile(&mut tile, &mut sprite, entity, &mut commands);
+                            }
+                        }
+                    }
+                }
+            } else {
+                let mut tiles_to_open = vec![(click.target)];
+                let mut handled_tiles = HashSet::new();
+
+                while let Some(entity) = tiles_to_open.pop() {
+                    if let Ok((mut tile, mut sprite)) = query.get_mut(entity) {
+                        if tile.is_mined || tile.state == TileState::Opened {
+                            continue;
+                        }
+                        open_tile(&mut tile, &mut sprite, entity, &mut commands);
+                        if tile.adjacent_mines == 0 {
+                            let (tile_x, tile_y) = grid_res.find_tile_coords(entity).unwrap();
+                            let adjacent_tiles =
+                                grid_res.find_surrounding_tile_handles(tile_x, tile_y);
+                            for e in adjacent_tiles {
+                                if !handled_tiles.contains(&e) {
+                                    tiles_to_open.push(e);
+                                }
+                            }
+                        }
+                    }
+                    handled_tiles.insert(entity);
+                }
             }
         }
         PointerButton::Secondary => {
-            if can_flag_tile(&tile) {
-                flag_tile(&mut tile, &mut sprite);
+            if let Ok((mut clicked_tile, mut clicked_sprite)) = query.get_mut(click.target) {
+                if can_flag_tile(&clicked_tile) {
+                    flag_tile(&mut clicked_tile, &mut clicked_sprite);
+                }
             }
         }
         _ => {}
@@ -189,14 +240,13 @@ fn can_open_tile(tile: &Tile) -> bool {
     return tile.state != TileState::Opened;
 }
 
-fn open_tile(tile: &mut Tile, sprite: &mut Sprite, entity: Entity, mut commands: Commands) {
+fn open_tile(tile: &mut Tile, sprite: &mut Sprite, entity: Entity, commands: &mut Commands) {
     tile.state = TileState::Opened;
     if (tile.is_mined) {
         sprite.color = Color::from(RED);
     } else {
         sprite.color = Color::from(WHITE_SMOKE);
         if tile.adjacent_mines > 0 {
-            // maybe render the text here?
             commands.entity(entity).with_children(|p| {
                 p.spawn((
                     Text2d::new(format!("{:?}", tile.adjacent_mines)),
