@@ -7,3 +7,11 @@ jobs:
   run-ci:
     name: Run CI
     uses: ./.github/workflows/ci.yaml
+  deploy-gh-pages:
+    name: Deploy to Github Pages
+    permissions:
+      contents: write
+    secrets: inherit
+    needs:
+     - run-ci
+    uses: ./.github/workflows/deploy-gh-pages.yaml
