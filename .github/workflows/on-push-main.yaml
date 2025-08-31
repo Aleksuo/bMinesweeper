@@ -1,0 +1,9 @@
+name: On Main push
+on:
+  push: 
+    branches:
+      - main
+jobs:
+  run-ci:
+    name: Run CI
+    uses: ./.github/workflows/ci.yaml
