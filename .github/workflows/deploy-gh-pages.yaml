@@ -25,7 +25,7 @@ jobs:
             target/
           key: ${{ runner.os }}-cargo-wasm-build-${{ hashFiles('**/Cargo.toml') }}
       - name: Install Trunk
-        run: cargo install --locked trunk
+        run: cargo install --locked trunk --force
       - name: build
         run: trunk build --release
       - name: Deploy
