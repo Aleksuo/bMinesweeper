@@ -1,6 +1,6 @@
 use bevy::{
     color::palettes::css::{BLUE, GRAY, RED, WHITE_SMOKE},
-    platform::collections::{HashMap, HashSet},
+    platform::collections::HashSet,
     prelude::*,
     text::FontSmoothing,
 };
@@ -19,6 +19,7 @@ enum TileState {
 #[derive(Resource)]
 struct TileGrid {
     max_mines: u32,
+    #[allow(dead_code)]
     remaining_mines: u32,
     height: i32,
     width: i32,
@@ -139,7 +140,7 @@ fn spawn_mines_on_grid(grid_res: ResMut<TileGrid>, mut tile_query: Query<&mut Ti
     let mut rng = rand::rng();
     while remaining_placements > 0 {
         let next_selection = rng.random_range(0..(spawnable_tiles.len() - 1));
-        let selection = spawnable_tiles.get(next_selection).unwrap().clone();
+        let selection = *spawnable_tiles.get(next_selection).unwrap();
         spawnable_tiles.remove(next_selection);
         let entity_handle = grid_res.tiles[selection.0 as usize][selection.1 as usize];
 
@@ -161,9 +162,9 @@ fn calculate_adjacent_mines(grid_res: ResMut<TileGrid>, mut tile_query: Query<&m
                 .iter()
                 .map(|handle| -> u32 {
                     if let Ok(tile) = tile_query.get(*handle) {
-                        return tile.is_mined as u32;
+                        tile.is_mined as u32
                     } else {
-                        return 0;
+                        0
                     }
                 })
                 .sum();
@@ -183,7 +184,7 @@ fn tile_on_pointer_click(
     match click.button {
         PointerButton::Primary => {
             let (can_open, is_mined) = if let Ok((clicked_tile, _)) = query.get(click.target) {
-                (can_open_tile(&clicked_tile), clicked_tile.is_mined)
+                (can_open_tile(clicked_tile), clicked_tile.is_mined)
             } else {
                 (false, false)
             };
@@ -193,10 +194,10 @@ fn tile_on_pointer_click(
             if is_mined {
                 for i in 0..grid_res.height {
                     for j in 0..grid_res.width {
-                        if let Some(entity) = grid_res.get_tile_handle(j, i) {
-                            if let Ok((mut tile, mut sprite)) = query.get_mut(entity) {
-                                open_tile(&mut tile, &mut sprite, entity, &mut commands);
-                            }
+                        if let Some(entity) = grid_res.get_tile_handle(j, i)
+                            && let Ok((mut tile, mut sprite)) = query.get_mut(entity)
+                        {
+                            open_tile(&mut tile, &mut sprite, entity, &mut commands);
                         }
                     }
                 }
@@ -226,10 +227,10 @@ fn tile_on_pointer_click(
             }
         }
         PointerButton::Secondary => {
-            if let Ok((mut clicked_tile, mut clicked_sprite)) = query.get_mut(click.target) {
-                if can_flag_tile(&clicked_tile) {
-                    flag_tile(&mut clicked_tile, &mut clicked_sprite);
-                }
+            if let Ok((mut clicked_tile, mut clicked_sprite)) = query.get_mut(click.target)
+                && can_flag_tile(&clicked_tile)
+            {
+                flag_tile(&mut clicked_tile, &mut clicked_sprite);
             }
         }
         _ => {}
@@ -237,12 +238,12 @@ fn tile_on_pointer_click(
 }
 
 fn can_open_tile(tile: &Tile) -> bool {
-    return tile.state != TileState::Opened;
+    tile.state != TileState::Opened
 }
 
 fn open_tile(tile: &mut Tile, sprite: &mut Sprite, entity: Entity, commands: &mut Commands) {
     tile.state = TileState::Opened;
-    if (tile.is_mined) {
+    if tile.is_mined {
         sprite.color = Color::from(RED);
     } else {
         sprite.color = Color::from(WHITE_SMOKE);
@@ -278,7 +279,7 @@ fn get_adjacent_text_color(count: u32) -> Srgba {
 }
 
 fn can_flag_tile(tile: &Tile) -> bool {
-    return tile.state != TileState::Opened;
+    tile.state != TileState::Opened
 }
 
 fn flag_tile(tile: &mut Tile, sprite: &mut Sprite) {

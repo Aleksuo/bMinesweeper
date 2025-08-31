@@ -1,6 +1,7 @@
 use bevy::prelude::*;
 
 #[derive(Clone, Copy, Default, Eq, PartialEq, Debug, Hash, States)]
+#[allow(dead_code)]
 pub enum GameState {
     MainMenu,
     SelectLevel,

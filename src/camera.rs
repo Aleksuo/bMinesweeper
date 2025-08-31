@@ -6,7 +6,7 @@ pub(super) fn plugin(app: &mut App) {
 
 fn setup_camera(mut commands: Commands) {
     commands.spawn((
-        Camera2d::default(),
+        Camera2d,
         Projection::from(OrthographicProjection {
             scaling_mode: bevy::render::camera::ScalingMode::FixedVertical {
                 viewport_height: 100.,
