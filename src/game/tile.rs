@@ -92,12 +92,8 @@ pub(super) fn plugin(app: &mut App) {
 }
 
 fn spawn_grid(mut commands: Commands, mut grid_res: ResMut<TileGrid>) {
-    let start_x = -(((grid_res.width as f32 * grid_res.tile_size)
-        + ((grid_res.width - 1) as f32 * grid_res.tile_gap))
-        / 2.);
-    let start_y = -(((grid_res.height as f32 * grid_res.tile_size)
-        + ((grid_res.height - 1) as f32 * grid_res.tile_gap))
-        / 2.);
+    let start_x = -(((grid_res.width - 1) as f32 * (grid_res.tile_size + grid_res.tile_gap)) / 2.);
+    let start_y = -(((grid_res.height - 1) as f32 * (grid_res.tile_size + grid_res.tile_gap)) / 2.);
     let mut x_coord = start_x;
     let mut y_coord = start_y;
     for i in 0..grid_res.height {
