@@ -179,11 +179,12 @@ fn tile_on_pointer_click(
 ) {
     match click.button {
         PointerButton::Primary => {
-            let (can_open, is_mined) = if let Ok((clicked_tile, _)) = query.get(click.event_target()) {
-                (can_open_tile(clicked_tile), clicked_tile.is_mined)
-            } else {
-                (false, false)
-            };
+            let (can_open, is_mined) =
+                if let Ok((clicked_tile, _)) = query.get(click.event_target()) {
+                    (can_open_tile(clicked_tile), clicked_tile.is_mined)
+                } else {
+                    (false, false)
+                };
             if !can_open {
                 return;
             }
