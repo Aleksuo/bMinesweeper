@@ -10,6 +10,7 @@ impl Plugin for AppPlugin {
         app.add_plugins((
             DefaultPlugins.set(WindowPlugin {
                 primary_window: Some(Window {
+                    #[cfg(target_arch = "wasm32")]
                     canvas: Some("#bevy-canvas".to_string()),
                     ..default()
                 }),
