@@ -8,7 +8,7 @@ fn setup_camera(mut commands: Commands) {
     commands.spawn((
         Camera2d,
         Projection::from(OrthographicProjection {
-            scaling_mode: bevy::render::camera::ScalingMode::AutoMin {
+            scaling_mode: bevy::camera::ScalingMode::AutoMin {
                 min_width: 100.,
                 min_height: 100.,
             },

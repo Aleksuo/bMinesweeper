@@ -172,14 +172,14 @@ fn calculate_adjacent_mines(grid_res: ResMut<TileGrid>, mut tile_query: Query<&m
 }
 
 fn tile_on_pointer_click(
-    click: Trigger<Pointer<Click>>,
+    click: On<Pointer<Click>>,
     grid_res: ResMut<TileGrid>,
     mut query: Query<(&mut Tile, &mut Sprite)>,
     mut commands: Commands,
 ) {
     match click.button {
         PointerButton::Primary => {
-            let (can_open, is_mined) = if let Ok((clicked_tile, _)) = query.get(click.target) {
+            let (can_open, is_mined) = if let Ok((clicked_tile, _)) = query.get(click.event_target()) {
                 (can_open_tile(clicked_tile), clicked_tile.is_mined)
             } else {
                 (false, false)
@@ -198,7 +198,7 @@ fn tile_on_pointer_click(
                     }
                 }
             } else {
-                let mut tiles_to_open = vec![(click.target)];
+                let mut tiles_to_open = vec![(click.event_target())];
                 let mut handled_tiles = HashSet::new();
 
                 while let Some(entity) = tiles_to_open.pop() {
@@ -223,7 +223,7 @@ fn tile_on_pointer_click(
             }
         }
         PointerButton::Secondary => {
-            if let Ok((mut clicked_tile, mut clicked_sprite)) = query.get_mut(click.target)
+            if let Ok((mut clicked_tile, mut clicked_sprite)) = query.get_mut(click.event_target())
                 && can_flag_tile(&clicked_tile)
             {
                 flag_tile(&mut clicked_tile, &mut clicked_sprite);
