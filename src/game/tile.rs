@@ -16,11 +16,16 @@ enum TileState {
     Flagged,
 }
 
+enum IngameState {
+    Ongoing,
+    Lost,
+    Won,
+}
+
 #[derive(Resource)]
 struct TileGrid {
+    state: IngameState,
     max_mines: u32,
-    #[allow(dead_code)]
-    remaining_mines: u32,
     height: i32,
     width: i32,
     tile_size: f32,
@@ -77,8 +82,8 @@ const TILE_SIZE: f32 = 8.;
 
 pub(super) fn plugin(app: &mut App) {
     app.insert_resource(TileGrid {
-        max_mines: 9,
-        remaining_mines: 9,
+        state: IngameState::Ongoing,
+        max_mines: 8,
         height: 8,
         width: 8,
         tile_gap: 1.,
@@ -173,7 +178,7 @@ fn calculate_adjacent_mines(grid_res: ResMut<TileGrid>, mut tile_query: Query<&m
 
 fn tile_on_pointer_click(
     click: On<Pointer<Click>>,
-    grid_res: ResMut<TileGrid>,
+    mut grid_res: ResMut<TileGrid>,
     mut query: Query<(&mut Tile, &mut Sprite)>,
     mut commands: Commands,
 ) {
@@ -198,6 +203,8 @@ fn tile_on_pointer_click(
                         }
                     }
                 }
+                grid_res.state = IngameState::Lost;
+                info!("Game lost");
             } else {
                 let mut tiles_to_open = vec![(click.event_target())];
                 let mut handled_tiles = HashSet::new();
@@ -220,6 +227,10 @@ fn tile_on_pointer_click(
                         }
                     }
                     handled_tiles.insert(entity);
+                }
+                if check_win_condition(&grid_res, query) {
+                    grid_res.state = IngameState::Won;
+                    info!("Game won");
                 }
             }
         }
@@ -287,4 +298,14 @@ fn flag_tile(tile: &mut Tile, sprite: &mut Sprite) {
         tile.state = TileState::Unopened;
         sprite.color = Color::from(GRAY)
     }
+}
+
+fn check_win_condition(tile_grid: &TileGrid, tile_query: Query<(&mut Tile, &mut Sprite)>) -> bool {
+    for tile_ref in tile_grid.tiles.iter().flatten() {
+        let (tile, _) = tile_query.get(*tile_ref).unwrap();
+        if tile.state == TileState::Unopened && !tile.is_mined {
+            return false;
+        }
+    }
+    true
 }
