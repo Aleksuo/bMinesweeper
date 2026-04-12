@@ -83,7 +83,7 @@ pub(super) fn plugin(app: &mut App) {
         width: 8,
         tile_gap: 1.,
         tile_size: 8.,
-        tiles: vec![vec![]],
+        tiles: vec![],
     })
     .add_systems(
         OnEnter(GameState::InGame),
@@ -97,6 +97,7 @@ fn spawn_grid(mut commands: Commands, mut grid_res: ResMut<TileGrid>) {
     let mut x_coord = start_x;
     let mut y_coord = start_y;
     for i in 0..grid_res.height {
+        grid_res.tiles.push(Vec::new());
         for _ in 0..grid_res.width {
             let entity_handle = commands
                 .spawn((
@@ -117,7 +118,6 @@ fn spawn_grid(mut commands: Commands, mut grid_res: ResMut<TileGrid>) {
         }
         x_coord = start_x;
         y_coord += grid_res.tile_size + grid_res.tile_gap;
-        grid_res.tiles.push(Vec::new());
     }
 }
 
