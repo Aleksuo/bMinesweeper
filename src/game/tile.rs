@@ -135,7 +135,7 @@ fn spawn_mines_on_grid(grid_res: ResMut<TileGrid>, mut tile_query: Query<&mut Ti
     let mut remaining_placements = grid_res.max_mines;
     let mut rng = rand::rng();
     while remaining_placements > 0 {
-        let next_selection = rng.random_range(0..(spawnable_tiles.len() - 1));
+        let next_selection = rng.random_range(0..spawnable_tiles.len());
         let selection = *spawnable_tiles.get(next_selection).unwrap();
         spawnable_tiles.remove(next_selection);
         let entity_handle = grid_res.tiles[selection.0 as usize][selection.1 as usize];
