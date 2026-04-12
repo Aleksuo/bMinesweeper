@@ -11,14 +11,25 @@ pub enum GameState {
     Settings,
 }
 
+#[derive(SubStates, Clone, PartialEq, Eq, Hash, Debug, Default)]
+#[source(GameState = GameState::InGame)]
+pub enum InGameState {
+    #[default]
+    Playing,
+    Won,
+    Lost,
+}
+
 #[derive(Component)]
 pub struct OnGameState(pub GameState);
 
 pub(super) fn plugin(app: &mut App) {
-    app.init_state::<GameState>().add_systems(
-        PreUpdate,
-        despawn_not_in_state.run_if(resource_changed::<NextState<GameState>>),
-    );
+    app.init_state::<GameState>()
+        .add_sub_state::<InGameState>()
+        .add_systems(
+            PreUpdate,
+            despawn_not_in_state.run_if(resource_changed::<NextState<GameState>>),
+        );
 }
 
 fn despawn_not_in_state(

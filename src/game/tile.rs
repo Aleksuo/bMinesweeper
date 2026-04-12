@@ -7,7 +7,7 @@ use bevy::{
 
 use rand::Rng;
 
-use crate::game_state::{GameState, OnGameState};
+use crate::game_state::{GameState, InGameState, OnGameState};
 
 #[derive(PartialEq)]
 enum TileState {
@@ -16,15 +16,8 @@ enum TileState {
     Flagged,
 }
 
-enum IngameState {
-    Ongoing,
-    Lost,
-    Won,
-}
-
 #[derive(Resource)]
 struct TileGrid {
-    state: IngameState,
     max_mines: u32,
     height: i32,
     width: i32,
@@ -82,7 +75,6 @@ const TILE_SIZE: f32 = 8.;
 
 pub(super) fn plugin(app: &mut App) {
     app.insert_resource(TileGrid {
-        state: IngameState::Ongoing,
         max_mines: 8,
         height: 8,
         width: 8,
@@ -90,13 +82,67 @@ pub(super) fn plugin(app: &mut App) {
         tile_size: 8.,
         tiles: vec![],
     })
+    .add_systems(OnEnter(GameState::InGame), spawn_restart_button)
     .add_systems(
-        OnEnter(GameState::InGame),
-        (spawn_grid, spawn_mines_on_grid, calculate_adjacent_mines).chain(),
+        OnEnter(InGameState::Playing),
+        ((
+            reset_grid,
+            spawn_grid,
+            spawn_mines_on_grid,
+            calculate_adjacent_mines,
+        )
+            .chain(),),
     );
 }
 
+#[derive(Component)]
+struct RestartButton;
+
+fn spawn_restart_button(mut commands: Commands, grid_res: Res<TileGrid>) {
+    let grid_top_edge = ((grid_res.height - 1) as f32 * (grid_res.tile_size + grid_res.tile_gap))
+        / 2.
+        + grid_res.tile_size / 2.;
+    let button_size = Vec2::new(grid_res.tile_size * 3., grid_res.tile_size * 1.25);
+    let button_y = grid_top_edge + grid_res.tile_size;
+
+    commands
+        .spawn((
+            OnGameState(GameState::InGame),
+            RestartButton,
+            Transform::from_xyz(0., button_y, 0.),
+            Sprite::from_color(Color::from(WHITE_SMOKE), button_size),
+            Pickable::default(),
+        ))
+        .observe(restart_button_on_pointer_click)
+        .with_children(|p| {
+            p.spawn((
+                Text2d::new("Reset"),
+                Transform::from_xyz(0., 0., 1.).with_scale(Vec3::splat(0.2)),
+                TextFont {
+                    font_size: TILE_SIZE * 4.,
+                    ..default()
+                },
+                TextColor::from(Color::BLACK),
+            ));
+        });
+}
+
+fn restart_button_on_pointer_click(
+    _click: On<Pointer<Click>>,
+    mut sub_state: ResMut<NextState<InGameState>>,
+) {
+    sub_state.set(InGameState::Playing);
+}
+
+fn reset_grid(mut commands: Commands, mut grid_res: ResMut<TileGrid>) {
+    for e in grid_res.tiles.iter().flatten() {
+        commands.entity(*e).despawn();
+    }
+    grid_res.tiles.clear();
+}
+
 fn spawn_grid(mut commands: Commands, mut grid_res: ResMut<TileGrid>) {
+    grid_res.tiles = vec![];
     let start_x = -(((grid_res.width - 1) as f32 * (grid_res.tile_size + grid_res.tile_gap)) / 2.);
     let start_y = -(((grid_res.height - 1) as f32 * (grid_res.tile_size + grid_res.tile_gap)) / 2.);
     let mut x_coord = start_x;
@@ -178,9 +224,10 @@ fn calculate_adjacent_mines(grid_res: ResMut<TileGrid>, mut tile_query: Query<&m
 
 fn tile_on_pointer_click(
     click: On<Pointer<Click>>,
-    mut grid_res: ResMut<TileGrid>,
+    grid_res: ResMut<TileGrid>,
     mut query: Query<(&mut Tile, &mut Sprite)>,
     mut commands: Commands,
+    mut sub_state: ResMut<NextState<InGameState>>,
 ) {
     match click.button {
         PointerButton::Primary => {
@@ -203,7 +250,7 @@ fn tile_on_pointer_click(
                         }
                     }
                 }
-                grid_res.state = IngameState::Lost;
+                sub_state.set(InGameState::Lost);
                 info!("Game lost");
             } else {
                 let mut tiles_to_open = vec![(click.event_target())];
@@ -229,7 +276,7 @@ fn tile_on_pointer_click(
                     handled_tiles.insert(entity);
                 }
                 if check_win_condition(&grid_res, query) {
-                    grid_res.state = IngameState::Won;
+                    sub_state.set(InGameState::Won);
                     info!("Game won");
                 }
             }
@@ -259,9 +306,9 @@ fn open_tile(tile: &mut Tile, sprite: &mut Sprite, entity: Entity, commands: &mu
             commands.entity(entity).with_children(|p| {
                 p.spawn((
                     Text2d::new(format!("{:?}", tile.adjacent_mines)),
-                    Transform::from_xyz(0., 0., 1.),
+                    Transform::from_xyz(0., 0., 1.).with_scale(Vec3::splat(0.2)),
                     TextFont {
-                        font_size: TILE_SIZE * 1.1,
+                        font_size: TILE_SIZE * 4.,
                         font_smoothing: FontSmoothing::None,
                         ..default()
                     },
