@@ -14,5 +14,5 @@ jobs:
       contents: write
     secrets: inherit
     needs:
-     - run-ci
+     - run-checks
     uses: ./.github/workflows/deploy-gh-pages.yaml
