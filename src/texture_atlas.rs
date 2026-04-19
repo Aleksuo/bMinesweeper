@@ -42,6 +42,21 @@ impl TileSprites {
 }
 
 #[derive(Resource)]
+pub struct RetryButtonSprite {
+    pub texture_handle: Handle<Image>,
+    pub atlas_layout: Handle<TextureAtlasLayout>,
+}
+
+impl RetryButtonSprite {
+    pub fn atlas(&self) -> TextureAtlas {
+        TextureAtlas {
+            layout: self.atlas_layout.clone(),
+            index: 0,
+        }
+    }
+}
+
+#[derive(Resource)]
 struct AssetsLoading(Vec<UntypedHandle>);
 
 pub(super) fn plugin(app: &mut App) {
@@ -68,6 +83,17 @@ fn setup(
     commands.insert_resource(TileSprites {
         texture_handle: texture,
         atlas_layout: texture_atlas_layout,
+    });
+
+    let retry_texture: Handle<Image> = asset_server.load("retry_button.png");
+    let retry_layout = TextureAtlasLayout::from_grid(UVec2::splat(32), 1, 1, None, None);
+    let retry_atlas_layout = texture_atlas_layouts.add(retry_layout);
+
+    loading.0.push(retry_texture.clone().untyped());
+
+    commands.insert_resource(RetryButtonSprite {
+        texture_handle: retry_texture,
+        atlas_layout: retry_atlas_layout,
     });
 }
 
