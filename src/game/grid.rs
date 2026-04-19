@@ -1,14 +1,12 @@
 use bevy::{
     app::App,
-    color::{Color, palettes::css::GRAY},
     ecs::{
         entity::Entity,
         resource::Resource,
         schedule::IntoScheduleConfigs,
-        system::{Commands, Query, ResMut},
+        system::{Commands, Query, Res, ResMut},
     },
     log::error,
-    math::Vec2,
     picking::Pickable,
     sprite::Sprite,
     state::state::OnEnter,
@@ -17,11 +15,9 @@ use bevy::{
 use rand::Rng;
 
 use crate::{
-    game::{
-        constants::TILE_SIZE,
-        tile::{Tile, TileState, tile_on_pointer_click},
-    },
+    game::tile::{Tile, TileState, tile_on_pointer_click},
     game_state::{GameState, InGameState, OnGameState},
+    texture_atlas::{TileSprite, TileSprites},
 };
 
 #[derive(Resource)]
@@ -77,7 +73,7 @@ pub(super) fn plugin(app: &mut App) {
         max_mines: 8,
         height: 8,
         width: 8,
-        tile_gap: 1.,
+        tile_gap: 0.1,
         tile_size: 8.,
         tiles: vec![],
     })
@@ -100,7 +96,7 @@ fn reset_grid(mut commands: Commands, mut grid_res: ResMut<TileGrid>) {
     grid_res.tiles.clear();
 }
 
-fn spawn_grid(mut commands: Commands, mut grid_res: ResMut<TileGrid>) {
+fn spawn_grid(mut commands: Commands, mut grid_res: ResMut<TileGrid>, sprites: Res<TileSprites>) {
     grid_res.tiles = vec![];
     let start_x = -(((grid_res.width - 1) as f32 * (grid_res.tile_size + grid_res.tile_gap)) / 2.);
     let start_y = -(((grid_res.height - 1) as f32 * (grid_res.tile_size + grid_res.tile_gap)) / 2.);
@@ -113,11 +109,16 @@ fn spawn_grid(mut commands: Commands, mut grid_res: ResMut<TileGrid>) {
                 .spawn((
                     OnGameState(GameState::InGame),
                     Transform::from_xyz(x_coord, y_coord, 0.),
-                    Sprite::from_color(Color::from(GRAY), Vec2::new(TILE_SIZE, TILE_SIZE)),
+                    Sprite::from_atlas_image(
+                        sprites.texture_handle.clone(),
+                        sprites.get(TileSprite::Unopened),
+                    ),
                     Tile {
+                        is_exploded: false,
                         state: TileState::Unopened,
                         adjacent_mines: 0,
                         is_mined: false,
+                        show_incorrect: false,
                     },
                     Pickable::default(),
                 ))
