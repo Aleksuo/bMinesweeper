@@ -21,37 +21,36 @@ pub struct Tile {
     pub(crate) is_exploded: bool,
 }
 
-pub(super) fn plugin(_app: &mut App) {}
+pub(super) fn plugin(app: &mut App) {
+    app.add_systems(Update, render_tiles);
+}
 
 pub fn tile_on_pointer_click(
     click: On<Pointer<Click>>,
     grid_res: ResMut<TileGrid>,
-    mut query: Query<(&mut Tile, &mut Sprite)>,
-    mut commands: Commands,
+    mut query: Query<&mut Tile>,
     mut sub_state: ResMut<NextState<InGameState>>,
-    sprites: Res<TileSprites>,
 ) {
     match click.button {
         PointerButton::Primary => {
-            let (can_open, is_mined) =
-                if let Ok((clicked_tile, _)) = query.get(click.event_target()) {
-                    (can_open_tile(clicked_tile), clicked_tile.is_mined)
-                } else {
-                    (false, false)
-                };
+            let (can_open, is_mined) = if let Ok((clicked_tile)) = query.get(click.event_target()) {
+                (can_open_tile(clicked_tile), clicked_tile.is_mined)
+            } else {
+                (false, false)
+            };
             if !can_open {
                 return;
             }
             if is_mined {
-                if let Ok((mut clicked_tile, _)) = query.get_mut(click.event_target()) {
+                if let Ok((mut clicked_tile)) = query.get_mut(click.event_target()) {
                     clicked_tile.is_exploded = true;
                 }
                 for i in 0..grid_res.height {
                     for j in 0..grid_res.width {
                         if let Some(entity) = grid_res.get_tile_handle(j, i)
-                            && let Ok((mut tile, mut sprite)) = query.get_mut(entity)
+                            && let Ok((mut tile)) = query.get_mut(entity)
                         {
-                            open_tile(&mut tile, &mut sprite, entity, &mut commands, &sprites);
+                            tile.state = TileState::Opened;
                         }
                     }
                 }
@@ -62,11 +61,11 @@ pub fn tile_on_pointer_click(
                 let mut handled_tiles = HashSet::new();
 
                 while let Some(entity) = tiles_to_open.pop() {
-                    if let Ok((mut tile, mut sprite)) = query.get_mut(entity) {
+                    if let Ok((mut tile)) = query.get_mut(entity) {
                         if tile.is_mined || tile.state == TileState::Opened {
                             continue;
                         }
-                        open_tile(&mut tile, &mut sprite, entity, &mut commands, &sprites);
+                        open_tile(&mut tile);
                         if tile.adjacent_mines == 0 {
                             let (tile_x, tile_y) = grid_res.find_tile_coords(entity).unwrap();
                             let adjacent_tiles =
@@ -87,15 +86,10 @@ pub fn tile_on_pointer_click(
             }
         }
         PointerButton::Secondary => {
-            if let Ok((mut clicked_tile, _)) = query.get_mut(click.event_target())
+            if let Ok(mut clicked_tile) = query.get_mut(click.event_target())
                 && can_flag_tile(&clicked_tile)
             {
-                flag_tile(
-                    &mut clicked_tile,
-                    click.event_target(),
-                    &mut commands,
-                    &sprites,
-                );
+                flag_tile(&mut clicked_tile);
             }
         }
         _ => {}
@@ -106,63 +100,8 @@ fn can_open_tile(tile: &Tile) -> bool {
     tile.state != TileState::Opened
 }
 
-fn open_tile(
-    tile: &mut Tile,
-    sprite: &mut Sprite,
-    entity: Entity,
-    commands: &mut Commands,
-    sprites: &Res<TileSprites>,
-) {
+fn open_tile(tile: &mut Tile) {
     tile.state = TileState::Opened;
-    commands.entity(entity).despawn_children();
-    if tile.is_mined && tile.is_exploded {
-        *sprite = Sprite::from_atlas_image(
-            sprites.texture_handle.clone(),
-            sprites.get(TileSprite::Exploded),
-        );
-        commands.entity(entity).with_children(|p| {
-            p.spawn((
-                Sprite::from_atlas_image(
-                    sprites.texture_handle.clone(),
-                    sprites.get(TileSprite::Mine),
-                ),
-                Transform::from_xyz(0., 0., 1.),
-            ));
-        });
-    } else if tile.is_mined {
-        *sprite = Sprite::from_atlas_image(
-            sprites.texture_handle.clone(),
-            sprites.get(TileSprite::Opened),
-        );
-        commands.entity(entity).with_children(|p| {
-            p.spawn((
-                Sprite::from_atlas_image(
-                    sprites.texture_handle.clone(),
-                    sprites.get(TileSprite::Mine),
-                ),
-                Transform::from_xyz(0., 0., 1.),
-            ));
-        });
-    } else {
-        *sprite = Sprite::from_atlas_image(
-            sprites.texture_handle.clone(),
-            sprites.get(TileSprite::Opened),
-        );
-        if tile.adjacent_mines > 0 {
-            commands.entity(entity).with_children(|p| {
-                p.spawn((
-                    Text2d::new(format!("{:?}", tile.adjacent_mines)),
-                    Transform::from_xyz(0., 0., 1.).with_scale(Vec3::splat(0.2)),
-                    TextFont {
-                        font_size: TILE_SIZE * 4.,
-                        font_smoothing: FontSmoothing::None,
-                        ..default()
-                    },
-                    TextColor::from(get_adjacent_text_color(tile.adjacent_mines)),
-                ));
-            });
-        }
-    }
 }
 
 fn get_adjacent_text_color(count: u32) -> Srgba {
@@ -183,30 +122,69 @@ fn can_flag_tile(tile: &Tile) -> bool {
     tile.state != TileState::Opened
 }
 
-fn flag_tile(tile: &mut Tile, entity: Entity, commands: &mut Commands, sprites: &Res<TileSprites>) {
+fn flag_tile(tile: &mut Tile) {
     if tile.state == TileState::Unopened {
         tile.state = TileState::Flagged;
-        commands.entity(entity).with_children(|p| {
-            p.spawn((
-                Sprite::from_atlas_image(
-                    sprites.texture_handle.clone(),
-                    sprites.get(TileSprite::Flag),
-                ),
-                Transform::from_xyz(0., 0., 1.),
-            ));
-        });
     } else if tile.state == TileState::Flagged {
         tile.state = TileState::Unopened;
-        commands.entity(entity).despawn_children();
     }
 }
 
-fn check_win_condition(tile_grid: &TileGrid, tile_query: Query<(&mut Tile, &mut Sprite)>) -> bool {
+fn check_win_condition(tile_grid: &TileGrid, tile_query: Query<&mut Tile>) -> bool {
     for tile_ref in tile_grid.tiles.iter().flatten() {
-        let (tile, _) = tile_query.get(*tile_ref).unwrap();
+        let tile = tile_query.get(*tile_ref).unwrap();
         if tile.state == TileState::Unopened && !tile.is_mined {
             return false;
         }
     }
     true
+}
+
+fn render_tiles(
+    mut commands: Commands,
+    mut tiles: Query<(Entity, &Tile, &mut Sprite), Changed<Tile>>,
+    sprites: Res<TileSprites>,
+) {
+    for (entity, tile, mut sprite) in &mut tiles {
+        commands.entity(entity).despawn_children();
+        let base_sprite = match (&tile.state, tile.is_mined, tile.is_exploded) {
+            (TileState::Unopened, _, _) => TileSprite::Unopened,
+            (TileState::Opened, true, true) => TileSprite::Exploded,
+            (TileState::Opened, _, _) => TileSprite::Opened,
+            (TileState::Flagged, _, _) => TileSprite::Unopened,
+        };
+
+        *sprite =
+            Sprite::from_atlas_image(sprites.texture_handle.clone(), sprites.get(base_sprite));
+
+        let overlay = match (&tile.state, tile.is_mined) {
+            (TileState::Opened, true) => Some(TileSprite::Mine),
+            (TileState::Flagged, _) => Some(TileSprite::Flag),
+            _ => None,
+        };
+
+        if overlay.is_none() && tile.state == TileState::Opened && tile.adjacent_mines > 0 {
+            commands.entity(entity).with_children(|p| {
+                p.spawn((
+                    Text2d::new(format!("{:?}", tile.adjacent_mines)),
+                    Transform::from_xyz(0., 0., 1.).with_scale(Vec3::splat(0.2)),
+                    TextFont {
+                        font_size: TILE_SIZE * 4.,
+                        font_smoothing: FontSmoothing::None,
+                        ..default()
+                    },
+                    TextColor::from(get_adjacent_text_color(tile.adjacent_mines)),
+                ));
+            });
+        }
+
+        if let Some(kind) = overlay {
+            commands.entity(entity).with_children(|p| {
+                p.spawn((
+                    Transform::from_xyz(0., 0., 1.),
+                    Sprite::from_atlas_image(sprites.texture_handle.clone(), sprites.get(kind)),
+                ));
+            });
+        }
+    }
 }
