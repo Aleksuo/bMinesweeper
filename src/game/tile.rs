@@ -33,7 +33,7 @@ pub fn tile_on_pointer_click(
 ) {
     match click.button {
         PointerButton::Primary => {
-            let (can_open, is_mined) = if let Ok((clicked_tile)) = query.get(click.event_target()) {
+            let (can_open, is_mined) = if let Ok(clicked_tile) = query.get(click.event_target()) {
                 (can_open_tile(clicked_tile), clicked_tile.is_mined)
             } else {
                 (false, false)
@@ -42,43 +42,11 @@ pub fn tile_on_pointer_click(
                 return;
             }
             if is_mined {
-                if let Ok((mut clicked_tile)) = query.get_mut(click.event_target()) {
-                    clicked_tile.is_exploded = true;
-                }
-                for i in 0..grid_res.height {
-                    for j in 0..grid_res.width {
-                        if let Some(entity) = grid_res.get_tile_handle(j, i)
-                            && let Ok((mut tile)) = query.get_mut(entity)
-                        {
-                            tile.state = TileState::Opened;
-                        }
-                    }
-                }
+                update_tile_states_on_game_over(click.event_target(), &grid_res, &mut query);
                 sub_state.set(InGameState::Lost);
                 info!("Game lost");
             } else {
-                let mut tiles_to_open = vec![(click.event_target())];
-                let mut handled_tiles = HashSet::new();
-
-                while let Some(entity) = tiles_to_open.pop() {
-                    if let Ok((mut tile)) = query.get_mut(entity) {
-                        if tile.is_mined || tile.state == TileState::Opened {
-                            continue;
-                        }
-                        open_tile(&mut tile);
-                        if tile.adjacent_mines == 0 {
-                            let (tile_x, tile_y) = grid_res.find_tile_coords(entity).unwrap();
-                            let adjacent_tiles =
-                                grid_res.find_surrounding_tile_handles(tile_x, tile_y);
-                            for e in adjacent_tiles {
-                                if !handled_tiles.contains(&e) {
-                                    tiles_to_open.push(e);
-                                }
-                            }
-                        }
-                    }
-                    handled_tiles.insert(entity);
-                }
+                propagate_open_tiles(click.event_target(), &grid_res, &mut query);
                 if check_win_condition(&grid_res, query) {
                     sub_state.set(InGameState::Won);
                     info!("Game won");
@@ -93,6 +61,53 @@ pub fn tile_on_pointer_click(
             }
         }
         _ => {}
+    }
+}
+
+fn update_tile_states_on_game_over(
+    clicked_entity: Entity,
+    grid_res: &ResMut<TileGrid>,
+    query: &mut Query<&mut Tile>,
+) {
+    if let Ok((mut clicked_tile)) = query.get_mut(clicked_entity) {
+        clicked_tile.is_exploded = true;
+    }
+    for i in 0..grid_res.height {
+        for j in 0..grid_res.width {
+            if let Some(entity) = grid_res.get_tile_handle(j, i)
+                && let Ok((mut tile)) = query.get_mut(entity)
+            {
+                tile.state = TileState::Opened;
+            }
+        }
+    }
+}
+
+fn propagate_open_tiles(
+    clicked_tile: Entity,
+    grid_res: &ResMut<TileGrid>,
+    query: &mut Query<&mut Tile>,
+) {
+    let mut tiles_to_open = vec![(clicked_tile)];
+    let mut handled_tiles = HashSet::new();
+
+    while let Some(entity) = tiles_to_open.pop() {
+        if let Ok((mut tile)) = query.get_mut(entity) {
+            if tile.is_mined || tile.state == TileState::Opened {
+                continue;
+            }
+            open_tile(&mut tile);
+            if tile.adjacent_mines == 0 {
+                let (tile_x, tile_y) = grid_res.find_tile_coords(entity).unwrap();
+                let adjacent_tiles = grid_res.find_surrounding_tile_handles(tile_x, tile_y);
+                for e in adjacent_tiles {
+                    if !handled_tiles.contains(&e) {
+                        tiles_to_open.push(e);
+                    }
+                }
+            }
+        }
+        handled_tiles.insert(entity);
     }
 }
 
