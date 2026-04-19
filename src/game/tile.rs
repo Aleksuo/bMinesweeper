@@ -74,13 +74,13 @@ fn update_tile_states_on_game_over(
     grid_res: &ResMut<TileGrid>,
     query: &mut Query<&mut Tile>,
 ) {
-    if let Ok((mut clicked_tile)) = query.get_mut(clicked_entity) {
+    if let Ok(mut clicked_tile) = query.get_mut(clicked_entity) {
         clicked_tile.is_exploded = true;
     }
     for i in 0..grid_res.height {
         for j in 0..grid_res.width {
             if let Some(entity) = grid_res.get_tile_handle(j, i)
-                && let Ok((mut tile)) = query.get_mut(entity)
+                && let Ok(mut tile) = query.get_mut(entity)
             {
                 if !tile.is_mined && tile.state == TileState::Flagged {
                     tile.show_incorrect = true;
@@ -101,7 +101,7 @@ fn propagate_open_tiles(
     let mut handled_tiles = HashSet::new();
 
     while let Some(entity) = tiles_to_open.pop() {
-        if let Ok((mut tile)) = query.get_mut(entity) {
+        if let Ok(mut tile) = query.get_mut(entity) {
             if tile.is_mined || tile.state == TileState::Opened {
                 continue;
             }

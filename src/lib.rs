@@ -1,3 +1,4 @@
+#[allow(unused_imports)]
 use bevy::{asset::AssetMetaCheck, prelude::*};
 pub struct AppPlugin;
 
