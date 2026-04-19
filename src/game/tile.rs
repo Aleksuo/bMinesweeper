@@ -30,8 +30,12 @@ pub fn tile_on_pointer_click(
     click: On<Pointer<Click>>,
     grid_res: ResMut<TileGrid>,
     mut query: Query<&mut Tile>,
+    state: Res<State<InGameState>>,
     mut sub_state: ResMut<NextState<InGameState>>,
 ) {
+    if state.get() != &InGameState::Playing {
+        return;
+    }
     match click.button {
         PointerButton::Primary => {
             let (can_open, is_mined) = if let Ok(clicked_tile) = query.get(click.event_target()) {
