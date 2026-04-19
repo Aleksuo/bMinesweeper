@@ -118,6 +118,7 @@ fn spawn_grid(mut commands: Commands, mut grid_res: ResMut<TileGrid>, sprites: R
                         state: TileState::Unopened,
                         adjacent_mines: 0,
                         is_mined: false,
+                        show_incorrect: false,
                     },
                     Pickable::default(),
                 ))

@@ -19,6 +19,7 @@ pub struct Tile {
     pub(crate) adjacent_mines: u32,
     pub(crate) is_mined: bool,
     pub(crate) is_exploded: bool,
+    pub(crate) show_incorrect: bool,
 }
 
 pub(super) fn plugin(app: &mut App) {
@@ -77,7 +78,11 @@ fn update_tile_states_on_game_over(
             if let Some(entity) = grid_res.get_tile_handle(j, i)
                 && let Ok((mut tile)) = query.get_mut(entity)
             {
-                tile.state = TileState::Opened;
+                if !tile.is_mined && tile.state == TileState::Flagged {
+                    tile.show_incorrect = true;
+                } else if tile.is_mined && tile.state != TileState::Flagged {
+                    tile.state = TileState::Opened;
+                }
             }
         }
     }
@@ -172,9 +177,10 @@ fn render_tiles(
         *sprite =
             Sprite::from_atlas_image(sprites.texture_handle.clone(), sprites.get(base_sprite));
 
-        let overlay = match (&tile.state, tile.is_mined) {
-            (TileState::Opened, true) => Some(TileSprite::Mine),
-            (TileState::Flagged, _) => Some(TileSprite::Flag),
+        let overlay = match (&tile.state, tile.is_mined, tile.show_incorrect) {
+            (TileState::Opened, true, _) => Some(TileSprite::Mine),
+            (TileState::Flagged, _, false) => Some(TileSprite::Flag),
+            (_, _, true) => Some(TileSprite::WrongFlag),
             _ => None,
         };
 
