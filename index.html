@@ -7,8 +7,8 @@
     <link rel="stylesheet" href="/bMinesweeper/styles-8b78580f7c3f524c.css" integrity="sha384-iNHImQhtnRJFnKEFuUbnRW6yy0ZFvbVDlLIlgHCDpd/dwai+VK2t8xX6s9ulzo3a"/>
     
 <script type="module">
-import init, * as bindings from '/bMinesweeper/bminesweeper-859a349ad4c65c87.js';
-const wasm = await init({ module_or_path: '/bMinesweeper/bminesweeper-859a349ad4c65c87_bg.wasm' });
+import init, * as bindings from '/bMinesweeper/bminesweeper-5523c174cd810c91.js';
+const wasm = await init({ module_or_path: '/bMinesweeper/bminesweeper-5523c174cd810c91_bg.wasm' });
 
 
 window.wasmBindings = bindings;
@@ -19,7 +19,7 @@ dispatchEvent(new CustomEvent("TrunkApplicationStarted", {detail: {wasm}}));
 </script>
     <!-- <link data-trunk rel="copy-dir" href="assets" /> -->
     <title>bMinesweeper</title>
-  <link rel="modulepreload" href="/bMinesweeper/bminesweeper-859a349ad4c65c87.js" crossorigin="anonymous" integrity="sha384-9u8nMA5eUxhBv275Sr4Y2anQO6oqK/FlNtfwdOLnKUHws+QE78B7AJrB9fLruh8X"><link rel="preload" href="/bMinesweeper/bminesweeper-859a349ad4c65c87_bg.wasm" crossorigin="anonymous" integrity="sha384-KsCxJ1uuOkgdqL9VyFo4upqLPncgrAzOsxYOK1r2xp00FdrTSqgEgKQvYQgcUTtE" as="fetch" type="application/wasm"></head>
+  <link rel="modulepreload" href="/bMinesweeper/bminesweeper-5523c174cd810c91.js" crossorigin="anonymous" integrity="sha384-wLMuenDhi3ixuOM5SF78nDZx/84E4EEJpcLtS1+X7Nyu50aWB/Pv5yTa6JVbH1Hz"><link rel="preload" href="/bMinesweeper/bminesweeper-5523c174cd810c91_bg.wasm" crossorigin="anonymous" integrity="sha384-utPb0ylqf3kGOlyBTyY4b0X74eFAgOJiQXj72YKUTpGbEnEjrW4WkDpKqIU3X1PS" as="fetch" type="application/wasm"></head>
   <body>
         <canvas id="bevy-canvas"></canvas>
   </body>
