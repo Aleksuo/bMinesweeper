@@ -3,12 +3,13 @@ use bevy::{
     ecs::{
         component::Component,
         observer::On,
-        system::{Commands, Res, ResMut},
+        query::With,
+        system::{Commands, Res, ResMut, Single},
     },
     math::Vec2,
     picking::{
         Pickable,
-        events::{Click, Pointer},
+        events::{Click, DragEnd, Pointer, Press},
     },
     sprite::Sprite,
     state::state::{NextState, OnEnter},
@@ -18,7 +19,7 @@ use bevy::{
 use crate::{
     game::grid::TileGrid,
     game_state::{GameState, InGameState, OnGameState},
-    texture_atlas::RetryButtonSprite,
+    texture_atlas::{RetryButtonSprite, RetryButtonSprites},
 };
 
 pub(super) fn plugin(app: &mut App) {
@@ -31,7 +32,7 @@ struct RestartButton;
 fn spawn_restart_button(
     mut commands: Commands,
     grid_res: Res<TileGrid>,
-    retry_sprite: Res<RetryButtonSprite>,
+    retry_sprites: Res<RetryButtonSprites>,
 ) {
     let grid_top_edge = ((grid_res.height - 1) as f32 * (grid_res.tile_size + grid_res.tile_gap))
         / 2.
@@ -39,8 +40,10 @@ fn spawn_restart_button(
     let button_size = Vec2::splat(grid_res.tile_size * 1.5);
     let button_y = grid_top_edge + grid_res.tile_size;
 
-    let mut sprite =
-        Sprite::from_atlas_image(retry_sprite.texture_handle.clone(), retry_sprite.atlas());
+    let mut sprite = Sprite::from_atlas_image(
+        retry_sprites.texture_handle.clone(),
+        retry_sprites.get(RetryButtonSprite::Unpressed),
+    );
     sprite.custom_size = Some(button_size);
 
     commands
@@ -51,12 +54,33 @@ fn spawn_restart_button(
             sprite,
             Pickable::default(),
         ))
-        .observe(restart_button_on_pointer_click);
+        .observe(restart_button_on_pointer_press)
+        .observe(restart_button_on_pointer_click)
+        .observe(restart_button_on_drag_end);
+}
+
+fn restart_button_on_pointer_press(
+    _press: On<Pointer<Press>>,
+    mut restart_sprite: Single<&mut Sprite, With<RestartButton>>,
+    retry_sprites: Res<RetryButtonSprites>,
+) {
+    restart_sprite.texture_atlas = Some(retry_sprites.get(RetryButtonSprite::Pressed));
 }
 
 fn restart_button_on_pointer_click(
     _click: On<Pointer<Click>>,
     mut sub_state: ResMut<NextState<InGameState>>,
+    mut restart_sprite: Single<&mut Sprite, With<RestartButton>>,
+    retry_sprites: Res<RetryButtonSprites>,
 ) {
+    restart_sprite.texture_atlas = Some(retry_sprites.get(RetryButtonSprite::Unpressed));
     sub_state.set(InGameState::Playing);
+}
+
+fn restart_button_on_drag_end(
+    _drag_end: On<Pointer<DragEnd>>,
+    mut restart_sprite: Single<&mut Sprite, With<RestartButton>>,
+    retry_sprites: Res<RetryButtonSprites>,
+) {
+    restart_sprite.texture_atlas = Some(retry_sprites.get(RetryButtonSprite::Unpressed));
 }

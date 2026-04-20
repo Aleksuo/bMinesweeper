@@ -41,17 +41,22 @@ impl TileSprites {
     }
 }
 
+pub enum RetryButtonSprite {
+    Unpressed,
+    Pressed,
+}
+
 #[derive(Resource)]
-pub struct RetryButtonSprite {
+pub struct RetryButtonSprites {
     pub texture_handle: Handle<Image>,
     pub atlas_layout: Handle<TextureAtlasLayout>,
 }
 
-impl RetryButtonSprite {
-    pub fn atlas(&self) -> TextureAtlas {
+impl RetryButtonSprites {
+    pub fn get(&self, kind: RetryButtonSprite) -> TextureAtlas {
         TextureAtlas {
             layout: self.atlas_layout.clone(),
-            index: 0,
+            index: kind as usize,
         }
     }
 }
@@ -85,13 +90,13 @@ fn setup(
         atlas_layout: texture_atlas_layout,
     });
 
-    let retry_texture: Handle<Image> = asset_server.load("retry_button.png");
-    let retry_layout = TextureAtlasLayout::from_grid(UVec2::splat(32), 1, 1, None, None);
+    let retry_texture: Handle<Image> = asset_server.load("retry-button.png");
+    let retry_layout = TextureAtlasLayout::from_grid(UVec2::splat(32), 2, 1, None, None);
     let retry_atlas_layout = texture_atlas_layouts.add(retry_layout);
 
     loading.0.push(retry_texture.clone().untyped());
 
-    commands.insert_resource(RetryButtonSprite {
+    commands.insert_resource(RetryButtonSprites {
         texture_handle: retry_texture,
         atlas_layout: retry_atlas_layout,
     });
