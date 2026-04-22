@@ -15,7 +15,7 @@ use bevy::{
 use rand::Rng;
 
 use crate::{
-    game::tile::{Tile, TileState, tile_on_pointer_click},
+    game::tile::{Tile, TileState, tile_on_drag_end, tile_on_pointer_click, tile_on_pointer_press},
     game_state::{GameState, InGameState, OnGameState},
     texture_atlas::{TileSprite, TileSprites},
 };
@@ -123,6 +123,8 @@ fn spawn_grid(mut commands: Commands, mut grid_res: ResMut<TileGrid>, sprites: R
                     Pickable::default(),
                 ))
                 .observe(tile_on_pointer_click)
+                .observe(tile_on_pointer_press)
+                .observe(tile_on_drag_end)
                 .id();
             grid_res.tiles[i as usize].push(entity_handle);
             x_coord += grid_res.tile_size + grid_res.tile_gap;

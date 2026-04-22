@@ -18,6 +18,7 @@ use bevy::{
 use crate::game_state::GameState;
 
 pub enum TileSprite {
+    PressedUnopened,
     Unopened,
     Opened,
     Exploded,

@@ -8,6 +8,7 @@ use crate::{
 
 #[derive(PartialEq)]
 pub enum TileState {
+    UnopenedPressed,
     Unopened,
     Opened,
     Flagged,
@@ -66,6 +67,33 @@ pub fn tile_on_pointer_click(
             }
         }
         _ => {}
+    }
+}
+
+pub fn tile_on_pointer_press(
+    press: On<Pointer<Press>>,
+    mut query: Query<&mut Tile>,
+    state: Res<State<InGameState>>,
+) {
+    if state.get() != &InGameState::Playing {
+        return;
+    }
+    if press.button == PointerButton::Primary
+        && let Ok(mut tile) = query.get_mut(press.original_event_target())
+    {
+        if tile.state != TileState::Unopened {
+            return;
+        }
+        tile.state = TileState::UnopenedPressed;
+    }
+}
+
+pub fn tile_on_drag_end(drag_end: On<Pointer<DragEnd>>, mut query: Query<&mut Tile>) {
+    if let Ok(mut tile) = query.get_mut(drag_end.original_event_target()) {
+        if tile.state != TileState::UnopenedPressed {
+            return;
+        }
+        tile.state = TileState::Unopened;
     }
 }
 
@@ -176,6 +204,7 @@ fn render_tiles(
             (TileState::Opened, true, true) => TileSprite::Exploded,
             (TileState::Opened, _, _) => TileSprite::Opened,
             (TileState::Flagged, _, _) => TileSprite::Unopened,
+            (TileState::UnopenedPressed, _, _) => TileSprite::PressedUnopened,
         };
 
         *sprite =
