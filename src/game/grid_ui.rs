@@ -10,6 +10,7 @@ use bevy::{
     picking::{
         Pickable,
         events::{Click, DragEnd, Pointer, Press},
+        pointer::PointerButton,
     },
     sprite::Sprite,
     state::state::{NextState, OnEnter},
@@ -60,21 +61,25 @@ fn spawn_restart_button(
 }
 
 fn restart_button_on_pointer_press(
-    _press: On<Pointer<Press>>,
+    press: On<Pointer<Press>>,
     mut restart_sprite: Single<&mut Sprite, With<RestartButton>>,
     retry_sprites: Res<RetryButtonSprites>,
 ) {
-    restart_sprite.texture_atlas = Some(retry_sprites.get(RetryButtonSprite::Pressed));
+    if press.button == PointerButton::Primary {
+        restart_sprite.texture_atlas = Some(retry_sprites.get(RetryButtonSprite::Pressed));
+    }
 }
 
 fn restart_button_on_pointer_click(
-    _click: On<Pointer<Click>>,
+    click: On<Pointer<Click>>,
     mut sub_state: ResMut<NextState<InGameState>>,
     mut restart_sprite: Single<&mut Sprite, With<RestartButton>>,
     retry_sprites: Res<RetryButtonSprites>,
 ) {
-    restart_sprite.texture_atlas = Some(retry_sprites.get(RetryButtonSprite::Unpressed));
-    sub_state.set(InGameState::Playing);
+    if click.button == PointerButton::Primary {
+        restart_sprite.texture_atlas = Some(retry_sprites.get(RetryButtonSprite::Unpressed));
+        sub_state.set(InGameState::Playing);
+    }
 }
 
 fn restart_button_on_drag_end(
