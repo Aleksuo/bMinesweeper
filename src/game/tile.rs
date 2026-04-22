@@ -149,7 +149,7 @@ fn propagate_open_tiles(
 }
 
 fn can_open_tile(tile: &Tile) -> bool {
-    tile.state != TileState::Opened
+    tile.state != TileState::Opened && tile.state != TileState::Flagged
 }
 
 fn open_tile(tile: &mut Tile) {
