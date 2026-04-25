@@ -34,6 +34,7 @@ pub fn tile_on_pointer_click(
     mut query: Query<&mut Tile>,
     state: Res<State<InGameState>>,
     mut sub_state: ResMut<NextState<InGameState>>,
+    mut sound_writer: MessageWriter<PlaySoundMessage>,
 ) {
     if state.get() != &InGameState::Playing {
         return;
@@ -49,6 +50,7 @@ pub fn tile_on_pointer_click(
                 return;
             }
             if is_mined {
+                sound_writer.write(PlaySoundMessage::MineExplosion);
                 update_tile_states_on_game_over(click.event_target(), &grid_res, &mut query);
                 sub_state.set(InGameState::Lost);
                 info!("Game lost");

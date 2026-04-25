@@ -16,6 +16,7 @@ impl SoundPlayer {
 pub enum PlaySoundMessage {
     ClickDown,
     ClickUp,
+    MineExplosion,
 }
 
 pub(super) fn plugin(app: &mut App) {
@@ -28,9 +29,11 @@ pub(super) fn plugin(app: &mut App) {
 fn load_sound_assets(mut commands: Commands, asset_server: Res<AssetServer>) {
     let click_down_sound = asset_server.load::<AudioSource>("sounds/click_down.wav");
     let click_up_sound = asset_server.load::<AudioSource>("sounds/click_up.wav");
+    let mine_explosion_sound = asset_server.load::<AudioSource>("sounds/mine_explosion.wav");
     let mut sound_map = HashMap::new();
     sound_map.insert(PlaySoundMessage::ClickDown, click_down_sound);
     sound_map.insert(PlaySoundMessage::ClickUp, click_up_sound);
+    sound_map.insert(PlaySoundMessage::MineExplosion, mine_explosion_sound);
 
     commands.insert_resource(SoundPlayer::new(sound_map));
 }
