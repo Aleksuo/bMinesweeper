@@ -1,6 +1,7 @@
 use bevy::{platform::collections::HashSet, prelude::*, text::FontSmoothing};
 
 use crate::{
+    audio::PlaySoundMessage,
     game::{constants::TILE_SIZE, grid::TileGrid},
     game_state::InGameState,
     texture_atlas::{TileSprite, TileSprites},
@@ -74,6 +75,7 @@ pub fn tile_on_pointer_press(
     press: On<Pointer<Press>>,
     mut query: Query<&mut Tile>,
     state: Res<State<InGameState>>,
+    mut sound_writer: MessageWriter<PlaySoundMessage>,
 ) {
     if state.get() != &InGameState::Playing {
         return;
@@ -84,6 +86,7 @@ pub fn tile_on_pointer_press(
         if tile.state != TileState::Unopened {
             return;
         }
+        sound_writer.write(PlaySoundMessage::ClickDown);
         tile.state = TileState::UnopenedPressed;
     }
 }

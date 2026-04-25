@@ -2,6 +2,7 @@
 use bevy::{asset::AssetMetaCheck, prelude::*};
 pub struct AppPlugin;
 
+mod audio;
 mod camera;
 mod game;
 mod game_state;
@@ -31,6 +32,7 @@ impl Plugin for AppPlugin {
             camera::plugin,
             game::plugin,
             texture_atlas::plugin,
+            audio::plugin,
         ));
     }
 }
