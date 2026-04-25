@@ -80,7 +80,7 @@ fn setup(
     mut texture_atlas_layouts: ResMut<Assets<TextureAtlasLayout>>,
     mut loading: ResMut<AssetsLoading>,
 ) {
-    let texture: Handle<Image> = asset_server.load("minesweeper-tiles.png");
+    let texture: Handle<Image> = asset_server.load("sprites/minesweeper-tiles.png");
     let layout = TextureAtlasLayout::from_grid(UVec2::splat(8), 6, 1, None, None);
     let texture_atlas_layout = texture_atlas_layouts.add(layout);
 
@@ -91,7 +91,7 @@ fn setup(
         atlas_layout: texture_atlas_layout,
     });
 
-    let retry_texture: Handle<Image> = asset_server.load("retry-button.png");
+    let retry_texture: Handle<Image> = asset_server.load("sprites/retry-button.png");
     let retry_layout = TextureAtlasLayout::from_grid(UVec2::splat(32), 2, 1, None, None);
     let retry_atlas_layout = texture_atlas_layouts.add(retry_layout);
 
