@@ -67,6 +67,7 @@ pub fn tile_on_pointer_click(
             if let Ok(mut clicked_tile) = query.get_mut(click.event_target())
                 && can_flag_tile(&clicked_tile)
             {
+                sound_writer.write(PlaySoundMessage::Dig);
                 flag_tile(&mut clicked_tile);
             }
         }
