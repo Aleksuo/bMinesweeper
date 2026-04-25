@@ -58,6 +58,7 @@ pub fn tile_on_pointer_click(
                 propagate_open_tiles(click.event_target(), &grid_res, &mut query);
                 if check_win_condition(&grid_res, query) {
                     sub_state.set(InGameState::Won);
+                    sound_writer.write(PlaySoundMessage::Victory);
                     info!("Game won");
                 }
             }
