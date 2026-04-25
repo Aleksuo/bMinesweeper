@@ -2,6 +2,7 @@ use bevy::{
     app::App,
     ecs::{
         component::Component,
+        message::MessageWriter,
         observer::On,
         query::With,
         system::{Commands, Res, ResMut, Single},
@@ -18,6 +19,7 @@ use bevy::{
 };
 
 use crate::{
+    audio::PlaySoundMessage,
     game::grid::TileGrid,
     game_state::{GameState, InGameState, OnGameState},
     texture_atlas::{RetryButtonSprite, RetryButtonSprites},
@@ -64,8 +66,10 @@ fn restart_button_on_pointer_press(
     press: On<Pointer<Press>>,
     mut restart_sprite: Single<&mut Sprite, With<RestartButton>>,
     retry_sprites: Res<RetryButtonSprites>,
+    mut sound_writer: MessageWriter<PlaySoundMessage>,
 ) {
     if press.button == PointerButton::Primary {
+        sound_writer.write(PlaySoundMessage::ClickDown);
         restart_sprite.texture_atlas = Some(retry_sprites.get(RetryButtonSprite::Pressed));
     }
 }
@@ -75,8 +79,10 @@ fn restart_button_on_pointer_click(
     mut sub_state: ResMut<NextState<InGameState>>,
     mut restart_sprite: Single<&mut Sprite, With<RestartButton>>,
     retry_sprites: Res<RetryButtonSprites>,
+    mut sound_writer: MessageWriter<PlaySoundMessage>,
 ) {
     if click.button == PointerButton::Primary {
+        sound_writer.write(PlaySoundMessage::ClickUp);
         restart_sprite.texture_atlas = Some(retry_sprites.get(RetryButtonSprite::Unpressed));
         sub_state.set(InGameState::Playing);
     }
@@ -86,6 +92,8 @@ fn restart_button_on_drag_end(
     _drag_end: On<Pointer<DragEnd>>,
     mut restart_sprite: Single<&mut Sprite, With<RestartButton>>,
     retry_sprites: Res<RetryButtonSprites>,
+    mut sound_writer: MessageWriter<PlaySoundMessage>,
 ) {
+    sound_writer.write(PlaySoundMessage::ClickUp);
     restart_sprite.texture_atlas = Some(retry_sprites.get(RetryButtonSprite::Unpressed));
 }
