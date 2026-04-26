@@ -7,6 +7,7 @@ pub(super) fn plugin(app: &mut App) {
 fn setup_camera(mut commands: Commands) {
     commands.spawn((
         Camera2d,
+        Msaa::Off,
         Projection::from(OrthographicProjection {
             scaling_mode: bevy::camera::ScalingMode::AutoMin {
                 min_width: 100.,
