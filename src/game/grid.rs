@@ -222,7 +222,7 @@ fn spawn_grid_borders(
     let bottom_right_y =
         -(((grid_res.height + 1) as f32 * (grid_res.tile_size + grid_res.tile_gap)) / 2.);
     let bottom_right_x =
-        (((grid_res.width + 1) as f32 * (grid_res.tile_size + grid_res.tile_gap)) / 2.);
+        ((grid_res.width + 1) as f32 * (grid_res.tile_size + grid_res.tile_gap)) / 2.;
 
     commands.spawn((
         OnGameState(GameState::InGame),
@@ -234,7 +234,7 @@ fn spawn_grid_borders(
     ));
 
     let top_start_y =
-        (((grid_res.height + 1) as f32 * (grid_res.tile_size + grid_res.tile_gap)) / 2.);
+        ((grid_res.height + 1) as f32 * (grid_res.tile_size + grid_res.tile_gap)) / 2.;
 
     commands.spawn((
         OnGameState(GameState::InGame),
@@ -254,9 +254,8 @@ fn spawn_grid_borders(
     ));
 
     let top_right_y =
-        (((grid_res.height + 1) as f32 * (grid_res.tile_size + grid_res.tile_gap)) / 2.);
-    let top_right_x =
-        (((grid_res.width + 1) as f32 * (grid_res.tile_size + grid_res.tile_gap)) / 2.);
+        ((grid_res.height + 1) as f32 * (grid_res.tile_size + grid_res.tile_gap)) / 2.;
+    let top_right_x = ((grid_res.width + 1) as f32 * (grid_res.tile_size + grid_res.tile_gap)) / 2.;
 
     commands.spawn((
         OnGameState(GameState::InGame),
@@ -267,8 +266,7 @@ fn spawn_grid_borders(
         ),
     ));
 
-    let top_left_y =
-        (((grid_res.height + 1) as f32 * (grid_res.tile_size + grid_res.tile_gap)) / 2.);
+    let top_left_y = ((grid_res.height + 1) as f32 * (grid_res.tile_size + grid_res.tile_gap)) / 2.;
     let top_left_x =
         -(((grid_res.width + 1) as f32 * (grid_res.tile_size + grid_res.tile_gap)) / 2.);
 
