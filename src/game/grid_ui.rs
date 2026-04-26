@@ -39,7 +39,7 @@ fn spawn_restart_button(
 ) {
     let grid_top_edge = ((grid_res.height - 1) as f32 * (grid_res.tile_size + grid_res.tile_gap))
         / 2.
-        + grid_res.tile_size / 2.;
+        + grid_res.tile_size * 0.8;
     let button_size = Vec2::splat(grid_res.tile_size * 1.5);
     let button_y = grid_top_edge + grid_res.tile_size;
 

@@ -62,6 +62,32 @@ impl RetryButtonSprites {
     }
 }
 
+pub enum GridBorderSprite {
+    Left,
+    Right,
+    Bottom,
+    Top,
+    TopLeft,
+    TopRight,
+    BottomLeft,
+    BottomRight,
+}
+
+#[derive(Resource)]
+pub struct GridBorderSprites {
+    pub texture_handle: Handle<Image>,
+    pub atlas_layout: Handle<TextureAtlasLayout>,
+}
+
+impl GridBorderSprites {
+    pub fn get(&self, kind: GridBorderSprite) -> TextureAtlas {
+        TextureAtlas {
+            layout: self.atlas_layout.clone(),
+            index: kind as usize,
+        }
+    }
+}
+
 #[derive(Resource)]
 struct AssetsLoading(Vec<UntypedHandle>);
 
@@ -100,6 +126,17 @@ fn setup(
     commands.insert_resource(RetryButtonSprites {
         texture_handle: retry_texture,
         atlas_layout: retry_atlas_layout,
+    });
+
+    let grid_border_texture: Handle<Image> = asset_server.load("sprites/grid_borders.png");
+    let grid_border_layout = TextureAtlasLayout::from_grid(UVec2::splat(8), 8, 1, None, None);
+    let grid_border_atlas_layout = texture_atlas_layouts.add(grid_border_layout);
+
+    loading.0.push(grid_border_texture.clone().untyped());
+
+    commands.insert_resource(GridBorderSprites {
+        texture_handle: grid_border_texture,
+        atlas_layout: grid_border_atlas_layout,
     });
 }
 

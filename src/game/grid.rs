@@ -7,8 +7,9 @@ use bevy::{
         system::{Commands, Query, Res, ResMut},
     },
     log::error,
+    math::Vec2,
     picking::Pickable,
-    sprite::Sprite,
+    sprite::{Sprite, SpriteImageMode},
     state::state::OnEnter,
     transform::components::Transform,
 };
@@ -17,7 +18,7 @@ use rand::Rng;
 use crate::{
     game::tile::{Tile, TileState, tile_on_drag_end, tile_on_pointer_click, tile_on_pointer_press},
     game_state::{GameState, InGameState, OnGameState},
-    texture_atlas::{TileSprite, TileSprites},
+    texture_atlas::{GridBorderSprite, GridBorderSprites, TileSprite, TileSprites},
 };
 
 #[derive(Resource)]
@@ -73,7 +74,7 @@ pub(super) fn plugin(app: &mut App) {
         max_mines: 8,
         height: 8,
         width: 8,
-        tile_gap: 0.1,
+        tile_gap: 0.16,
         tile_size: 8.,
         tiles: vec![],
     })
@@ -82,6 +83,7 @@ pub(super) fn plugin(app: &mut App) {
         ((
             reset_grid,
             spawn_grid,
+            spawn_grid_borders,
             spawn_mines_on_grid,
             calculate_adjacent_mines,
         )
@@ -132,6 +134,152 @@ fn spawn_grid(mut commands: Commands, mut grid_res: ResMut<TileGrid>, sprites: R
         x_coord = start_x;
         y_coord += grid_res.tile_size + grid_res.tile_gap;
     }
+}
+
+fn spawn_grid_borders(
+    mut commands: Commands,
+    sprites: Res<GridBorderSprites>,
+    grid_res: Res<TileGrid>,
+) {
+    // Left border
+    let left_start_x =
+        -(((grid_res.width + 1) as f32 * (grid_res.tile_size + grid_res.tile_gap)) / 2.);
+    let border_height =
+        grid_res.height as f32 * (grid_res.tile_size + grid_res.tile_gap) + 2. * grid_res.tile_gap;
+    commands.spawn((
+        OnGameState(GameState::InGame),
+        Transform::from_xyz(left_start_x, 0., 0.),
+        Sprite {
+            image_mode: SpriteImageMode::Tiled {
+                tile_y: true,
+                tile_x: false,
+                stretch_value: 1.0,
+            },
+            custom_size: Some(Vec2::new(grid_res.tile_size, border_height)),
+            ..Sprite::from_atlas_image(
+                sprites.texture_handle.clone(),
+                sprites.get(GridBorderSprite::Left),
+            )
+        },
+    ));
+
+    let right_start_x =
+        ((grid_res.width + 1) as f32 * (grid_res.tile_size + grid_res.tile_gap)) / 2.;
+
+    commands.spawn((
+        OnGameState(GameState::InGame),
+        Transform::from_xyz(right_start_x, 0., 0.),
+        Sprite {
+            image_mode: SpriteImageMode::Tiled {
+                tile_y: true,
+                tile_x: false,
+                stretch_value: 1.0,
+            },
+            custom_size: Some(Vec2::new(grid_res.tile_size, border_height)),
+            ..Sprite::from_atlas_image(
+                sprites.texture_handle.clone(),
+                sprites.get(GridBorderSprite::Right),
+            )
+        },
+    ));
+
+    let border_width =
+        grid_res.width as f32 * (grid_res.tile_size + grid_res.tile_gap) + 2. * grid_res.tile_gap;
+    let bottom_start_y =
+        -(((grid_res.height + 1) as f32 * (grid_res.tile_size + grid_res.tile_gap)) / 2.);
+
+    commands.spawn((
+        OnGameState(GameState::InGame),
+        Transform::from_xyz(0., bottom_start_y, 0.),
+        Sprite {
+            image_mode: SpriteImageMode::Tiled {
+                tile_y: false,
+                tile_x: true,
+                stretch_value: 1.0,
+            },
+            custom_size: Some(Vec2::new(border_width, grid_res.tile_size)),
+            ..Sprite::from_atlas_image(
+                sprites.texture_handle.clone(),
+                sprites.get(GridBorderSprite::Bottom),
+            )
+        },
+    ));
+
+    let bottom_left_y =
+        -(((grid_res.height + 1) as f32 * (grid_res.tile_size + grid_res.tile_gap)) / 2.);
+    let bottom_left_x =
+        -(((grid_res.width + 1) as f32 * (grid_res.tile_size + grid_res.tile_gap)) / 2.);
+
+    commands.spawn((
+        OnGameState(GameState::InGame),
+        Transform::from_xyz(bottom_left_x, bottom_left_y, 0.),
+        Sprite::from_atlas_image(
+            sprites.texture_handle.clone(),
+            sprites.get(GridBorderSprite::BottomLeft),
+        ),
+    ));
+
+    let bottom_right_y =
+        -(((grid_res.height + 1) as f32 * (grid_res.tile_size + grid_res.tile_gap)) / 2.);
+    let bottom_right_x =
+        (((grid_res.width + 1) as f32 * (grid_res.tile_size + grid_res.tile_gap)) / 2.);
+
+    commands.spawn((
+        OnGameState(GameState::InGame),
+        Transform::from_xyz(bottom_right_x, bottom_right_y, 0.),
+        Sprite::from_atlas_image(
+            sprites.texture_handle.clone(),
+            sprites.get(GridBorderSprite::BottomRight),
+        ),
+    ));
+
+    let top_start_y =
+        (((grid_res.height + 1) as f32 * (grid_res.tile_size + grid_res.tile_gap)) / 2.);
+
+    commands.spawn((
+        OnGameState(GameState::InGame),
+        Transform::from_xyz(0., top_start_y, 0.),
+        Sprite {
+            image_mode: SpriteImageMode::Tiled {
+                tile_y: false,
+                tile_x: true,
+                stretch_value: 1.0,
+            },
+            custom_size: Some(Vec2::new(border_width, grid_res.tile_size)),
+            ..Sprite::from_atlas_image(
+                sprites.texture_handle.clone(),
+                sprites.get(GridBorderSprite::Top),
+            )
+        },
+    ));
+
+    let top_right_y =
+        (((grid_res.height + 1) as f32 * (grid_res.tile_size + grid_res.tile_gap)) / 2.);
+    let top_right_x =
+        (((grid_res.width + 1) as f32 * (grid_res.tile_size + grid_res.tile_gap)) / 2.);
+
+    commands.spawn((
+        OnGameState(GameState::InGame),
+        Transform::from_xyz(top_right_x, top_right_y, 0.),
+        Sprite::from_atlas_image(
+            sprites.texture_handle.clone(),
+            sprites.get(GridBorderSprite::TopRight),
+        ),
+    ));
+
+    let top_left_y =
+        (((grid_res.height + 1) as f32 * (grid_res.tile_size + grid_res.tile_gap)) / 2.);
+    let top_left_x =
+        -(((grid_res.width + 1) as f32 * (grid_res.tile_size + grid_res.tile_gap)) / 2.);
+
+    commands.spawn((
+        OnGameState(GameState::InGame),
+        Transform::from_xyz(top_left_x, top_left_y, 0.),
+        Sprite::from_atlas_image(
+            sprites.texture_handle.clone(),
+            sprites.get(GridBorderSprite::TopLeft),
+        ),
+    ));
 }
 
 fn spawn_mines_on_grid(grid_res: ResMut<TileGrid>, mut tile_query: Query<&mut Tile>) {
